@@ -18,7 +18,7 @@ MongoClient.connect('mongodb://localhost:27017/TodoApp', (err, db) => {
 
   // // inserts data to a collection. Create the collection if not yet present
   // db.collection('Todos').insertOne({
-  //   text: 'Something to do',
+  //   text: 'one more thing',
   //   completed: false
   // }, (err, result) => {
   //   if (err) {
@@ -30,15 +30,15 @@ MongoClient.connect('mongodb://localhost:27017/TodoApp', (err, db) => {
 
   // // Insert new doc into Users collection (name, age, location)
   // db.collection('Users').insertOne({
-  //   name: 'mara',
+  //   name: 'bruno',
   //   age: 28,
-  //   location: 'albuquerque'
+  //   location: 'seatle'
   // }, (err, result) => {
   //   if (err) {
   //     return console.log('Unable to create user', err);
   //   }
-  //   // console.log(JSON.stringify(result.ops, undefined, 2));
-  //   console.log(result.ops[0]._id.getTimeStamp()); // '_id' has built in values, such as timestamp
+  //   console.log(JSON.stringify(result.ops, undefined, 2));
+  //   // console.log(result.ops[0]._id.getTimeStamp()); // '_id' has built in values, such as timestamp
   // });
 
   db.close();
