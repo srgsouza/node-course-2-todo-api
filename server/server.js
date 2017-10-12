@@ -32,4 +32,14 @@ app.listen(3000, () => {
   console.log('Started on port 3000');
 }) ;
 
+// GET route for all todos
+app.get('/todos', (req, res) => {
+  Todo.find().then((todos) => {
+    res.send({todos});  // Create an object and specify todos setting equal to the array.  Use this instead of directly passing back an array like res.send(todos), which allows for no flexibility
+  }, (e) => {
+        res.status(400).send(e);
+  });
+});
+
+
 module.exports = {app}; //adding this export to be used in the tests suite
