@@ -1,6 +1,7 @@
 // libray imports
 var express = require('express');
 var bodyParser = require('body-parser'); // Takes the string body and turns it into a JSON object.
+const {ObjectID} = require('mongodb');
 
 // local imports
 // ES6 destructuring syntax. Creating the local variable and setting property of the same name in the object
@@ -38,6 +39,23 @@ app.get('/todos', (req, res) => {
     res.send({todos});  // Create an object and specify todos setting equal to the array.  Use this instead of directly passing back an array like res.send(todos), which allows for no flexibility
   }, (e) => {
         res.status(400).send(e);
+  });
+});
+
+// GET route for IDs - /todos/123456
+app.get('/todos/:id', (req, res) => { // use the format './route/:someName'  where someName is passed via the url
+  var id = req.params.id;  // This gets the dynamic ':id' parameter from '/todos/:id'
+  // res.send(req.params);  // testing - gets a json response
+  if (!ObjectID.isValid(id)) {  // Checks whether ID has a valid format NOT.  mongoose functionality
+    return res.status(404).send(); //  send 404. 'return' stops functin execution.
+  }
+  Todo.findById(id).then((todo) => {  // Search a todo by ID
+    if (!todo) {  // If todo not found in DB
+      return res.status(404).send('Todo not found');
+    }
+    res.send({todo});  // Sends back the todo, as an object - using ES6 object definition syntax (same as 'res.send({todo: todo})')
+  }).catch((e) => {
+    res.status(400).send();
   });
 });
 
