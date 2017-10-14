@@ -1,18 +1,21 @@
 // Test suite
 // Test cases for '/todos'
-// Verify that when correct data is sent, we get back a 200 with complete doc including the ID
+// Such as ... Verify that when correct data is sent, we get back a 200 with complete doc including the ID
 // and if we send bad data we get a code 400
 
 const expect = require('expect'); // test assertions
 const request = require('supertest'); // test express routes
+const {ObjectID} = require('mongodb'); // needed to create the ID object of the mongo DB
 
 const {app} = require('./../server'); // ES6 destructuring syntax (set app property to the app variable) - access to the express app
 const {Todo} = require('./../models/todo'); // access to the Todo model (based on mongoose)
 
 // dummy array of objects
 const todos = [{
+  _id: new ObjectID(),
   text:'First test todo'
 }, {
+  _id: new ObjectID(),
   text:'Second test todo'
 }];
 
@@ -74,6 +77,33 @@ describe('GET /todos', () => { // describe and group the tests. This one is for 
       .expect((res) => {
         expect(res.body.todos.length).toBe(2);
       })
+      .end(done);
+  });
+});
+
+describe('GET /todos:id', () => {  // requires a document with an ID - create/add such ID in this test file
+  it('should return todo doc', (done) => {
+    request(app)
+      .get(`/todos/${todos[0]._id.toHexString()}`) // fetch the '_id' object from the todos array, and convert it to a string.
+      .expect(200)
+      .expect((res) => {
+        expect(res.body.todo.text).toBe(todos[0].text);  // 'todo' is waht comes back. see 'res.send({todo});' in findById function on server.js
+      })
+      .end(done);
+  });
+
+  it('should return a 404 if todo not found', (done) => {
+    var hexID = new ObjectID().toHexString(); // create a new object id, which will NOT match what's in the todos array (not in the database)
+    request(app)
+      .get(`/todos/${hexID}`)
+      .expect(404)
+      .end(done);
+  });
+
+  it('should return a 404 for non-objects ids (format/type not valid)', (done) => {
+    request(app)
+      .get('/todos/123')
+      .expect(404)
       .end(done);
   });
 });
