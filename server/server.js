@@ -30,7 +30,7 @@ app.post('/todos', (req, res) => {
     res.status(400).send(e); // send status 400 (bad request) along with error msg
   });
 });
-app.listen(3000, () => {
+app.listen(port, () => {
   console.log(`Started up at port ${port}`);
 }) ;
 
