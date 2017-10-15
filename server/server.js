@@ -45,20 +45,41 @@ app.get('/todos', (req, res) => {
 
 // GET route for IDs - /todos/123456
 app.get('/todos/:id', (req, res) => { // use the format './route/:someName'  where someName is passed via the url
-  var id = req.params.id;  // This gets the dynamic ':id' parameter from '/todos/:id'
+  var id = req.params.id;  // This gets the dynamic ':id' parameter from '/todos/id'
   // res.send(req.params);  // testing - gets a json response
   if (!ObjectID.isValid(id)) {  // Checks whether ID has a valid format NOT.  mongoose functionality
     return res.status(404).send(); //  send 404. 'return' stops functin execution.
   }
+
   Todo.findById(id).then((todo) => {  // Search a todo by ID
     if (!todo) {  // If todo not found in DB
       return res.status(404).send('Todo not found');
     }
+    
     res.send({todo});  // Sends back the todo, as an object - using ES6 object definition syntax (same as 'res.send({todo: todo})')
   }).catch((e) => {
     res.status(400).send();
   });
 });
 
+// DELETE route
+app.delete('/todos/:id', (req, res) => {
+  // get the id
+  var id = req.params.id;
+  // validate the id, return 404 if not valid
+  if (!ObjectID.isValid(id)) {
+    return res.status(404).send();   // return status and empty result
+  }
+
+  Todo.findByIdAndRemove(id).then((todo) => {  // remove todo by ID
+    if (!todo) { // if todo not present, return 404
+      return res.status(404).send();
+    }
+
+    res.status(200).send({todo});  // if todo found, send 200 and todo
+  }).catch((e) => {
+    res.status(400).send(); // catch all other errors
+  });
+});
 
 module.exports = {app}; //adding this export to be used in the tests suite
