@@ -10,6 +10,7 @@ var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
 
 var app = express();
+const port = process.env.PORT || 3000;  // Needed if running on Heroku instead of local
 
 // middleware. uses the json() method of the body-parser library.
 // .json() method returns a function. This is the middleware which is given to express.
@@ -30,7 +31,7 @@ app.post('/todos', (req, res) => {
   });
 });
 app.listen(3000, () => {
-  console.log('Started on port 3000');
+  console.log(`Started up at port ${port}`);
 }) ;
 
 // GET route for all todos
