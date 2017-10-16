@@ -1,3 +1,5 @@
+require('./config/config');
+
 // libray imports
 const express = require('express');
 const bodyParser = require('body-parser'); // Takes the string body and turns it into a JSON object.
@@ -11,7 +13,7 @@ var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
 
 var app = express();
-const port = process.env.PORT || 3000;  // Needed if running on Heroku instead of local
+const port = process.env.PORT;  // Gets the port - Refer to config
 
 // middleware. uses the json() method of the body-parser library.
 // .json() method returns a function. This is the middleware which is given to express.

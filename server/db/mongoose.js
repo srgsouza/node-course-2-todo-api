@@ -6,7 +6,8 @@ var mongoose = require('mongoose');
 
 // Tell mongoose which promise library to use (mongoose supports callbacks by default, but we want to use promises)
 mongoose.Promise = global.Promise;
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/TodoApp',  {
+// connects to the mongodb database. MONGODB_URI holds the database uri. 
+mongoose.connect(process.env.MONGODB_URI, {
   // keepAlive: true,
   // reconnectTries: Number.MAX_VALUE,
   useMongoClient: true
