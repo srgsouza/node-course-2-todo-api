@@ -1,7 +1,8 @@
 // libray imports
-var express = require('express');
-var bodyParser = require('body-parser'); // Takes the string body and turns it into a JSON object.
+const express = require('express');
+const bodyParser = require('body-parser'); // Takes the string body and turns it into a JSON object.
 const {ObjectID} = require('mongodb');
+const _ = require('lodash'); // utility functions
 
 // local imports
 // ES6 destructuring syntax. Creating the local variable and setting property of the same name in the object
@@ -55,7 +56,7 @@ app.get('/todos/:id', (req, res) => { // use the format './route/:someName'  whe
     if (!todo) {  // If todo not found in DB
       return res.status(404).send('Todo not found');
     }
-    
+
     res.send({todo});  // Sends back the todo, as an object - using ES6 object definition syntax (same as 'res.send({todo: todo})')
   }).catch((e) => {
     res.status(400).send();
@@ -64,10 +65,8 @@ app.get('/todos/:id', (req, res) => { // use the format './route/:someName'  whe
 
 // DELETE route
 app.delete('/todos/:id', (req, res) => {
-  // get the id
-  var id = req.params.id;
-  // validate the id, return 404 if not valid
-  if (!ObjectID.isValid(id)) {
+  var id = req.params.id;   // get the id
+  if (!ObjectID.isValid(id)) { // validate the id, return 404 if not valid
     return res.status(404).send();   // return status and empty result
   }
 
@@ -79,6 +78,38 @@ app.delete('/todos/:id', (req, res) => {
     res.status(200).send({todo});  // if todo found, send 200 and todo
   }).catch((e) => {
     res.status(400).send(); // catch all other errors
+  });
+});
+
+// PATCH  (http patch method, used to update items)
+app.patch('/todos/:id', (req, res) => {
+  var id = req.params.id; // get the id
+  // body stores the updates.
+  // .pick is a lodash function that takes an object and a array of properties. (properties to be updated by the user)
+  // this allows control of what the user can update in the app.
+  var body = _.pick(req.body, ['text', 'completed']);
+  if (!ObjectID.isValid(id)) { // validate the id
+    return res.status(404).send();   // return status and empty result
+  }
+
+  // Check if todo is to be set to completed
+  if (_.isBoolean(body.completed) && body.completed) { // is the 'completed' property a boolean, and is it true?
+    body.completedAt = new Date().getTime();  // getTime() returns a javascript timestamp. (number of seconds since 00:00 jan 1st 1970)
+  } else {
+    body.completed = false;
+    body.completedAt = null;
+  }
+
+  // ref: findByIdAndUpdate() is similar to what we use on findOneAndUpdate() on the playground/mongodb-update.js
+  // update the database with 'body'.  {new: true} is an option that returns the object from the db
+  Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
+    if (!todo) { // if todo not found
+      return res.status(404).send();
+    }
+
+    res.send({todo});  // sends back the updated todo 
+  }).catch((e) => {
+    res.status(400).send();
   });
 });
 
