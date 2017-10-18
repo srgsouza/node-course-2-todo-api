@@ -1,8 +1,10 @@
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
+const validator = require('validator'); // npm library that handles validation - ie email has proper format.
+const jwt = require('jsonwebtoken');  // library to deal with encryption, tokens...
+const _ = require('lodash'); // needed for the .pick() method
 
-// create a User model
-// User, email, require, trim it, set min length to 1
-var User = mongoose.model('User', {
+// This UserSchema variable stores the schema (properties) for the user - using this since we can't add methods to the User model directly
+var UserSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
@@ -14,8 +16,70 @@ var User = mongoose.model('User', {
     required: true,
     minlength: 1,
     trim: true,
-  }
-
+    unique: true,
+    validate: {
+      // validator: (value) => {
+      //   return validator.isEmail(value);
+      // },
+      validator: validator.isEmail,  // abobe validator block can be writen like this instead
+      message: '{value} is not a valid email'
+    }
+  },
+  password: {
+    type: String,
+    require: true,
+    minlength: 6
+  },
+  tokens: [{  // tokens array - feature available in mongodb, not in SQL databases
+    access: {
+      type: String,
+      required: true
+    },
+    token: {
+      type: String,
+      required: true
+    }
+  }]
 });
+
+// UserSchema.methods is an object, and allow us to add any methods we like
+// This instance method has access to the individual documents, which is needed to create a user-specific web token
+// Not using the ES6 'array' function syntax, because it does not bind the 'this' keyword that stores the individual document
+// UserSchema.methods.toJSON determines what is send back when a mongoose model is converted into a json value
+UserSchema.methods.toJSON = function() {
+  var user = this;
+  // toObject() takes the mongoose variable 'user' and converted to a regular object where only the properties available on the document exist
+  // per mongoose documentation 'Each sub-document is converted to a plain object by calling its #toObject method.'
+  var userObject = user.toObject();
+
+  return _.pick(userObject, ['_id', 'email']); // leaves out the password and the token array, which should not be returned to the client
+};
+
+// this will create a modified token and make it available for use in the server.js file
+UserSchema.methods.generateAuthToken = function () {
+  var user = this;
+  var access = 'auth';
+  // sign takes an object and a 'secret' value.
+  // getting the user id property 'user._id' and pass the string, as opposed to passing the object, to jwt.sign.
+  // Also pass the access and secret value.
+  // convert it to a string and assign to the token variable
+  var token = jwt.sign({_id: user._id.toHexString(), access}, 'abc123').toString();
+
+  // Update the tokens array (defined in the schema). This completes the change in the User model (locally)
+  user.tokens.push({access, token});
+
+  // Now we save the user model to the database
+  // user.save() returns a promise, where we can then pass the success callback function, returning the token variable defined above
+  // The 'return user.save()...' allows for a .then() call inside the server.js file to chain on to the promise ('.then(token) => {}')
+  // Usually when we return to chain in a promise, we return another promise...
+  // In this case we're returning a value, instead of a promise.  This value will get passed as the success argument for the next .then() call
+  return user.save().then(() => {
+    return token; // returns the token (variable defined above)
+  });
+  // in the server.js file, we can tack another callback
+};
+
+// create the User model
+var User = mongoose.model('User', UserSchema);
 
 module.exports = {User}; // ES6 syntax. Exporting User object

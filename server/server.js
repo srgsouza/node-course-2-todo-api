@@ -23,19 +23,16 @@ app.use(bodyParser.json());
 // the server will take the JSON's text property, create the new model (complete including ID) and send it back to the client
 app.post('/todos', (req, res) => {
   // console.log(req.body); // testing. body has the json object, stored by bodyParser
-  var todo = new Todo({
+  var todo = new Todo({  // Creates a new instance of the Todo object, defined in the model at todo.js
     text: req.body.text //gets the text property of the body
   });
 
-  todo.save().then((doc) => {  // saves to the db.  then sends the created document, or an error
+  todo.save().then((doc) => {  // saves to the db.  then gets the created document, or an error
     res.send(doc);
   }, (e) => {
     res.status(400).send(e); // send status 400 (bad request) along with error msg
   });
 });
-app.listen(port, () => {
-  console.log(`Started up at port ${port}`);
-}) ;
 
 // GET route for all todos
 app.get('/todos', (req, res) => {
@@ -113,6 +110,27 @@ app.patch('/todos/:id', (req, res) => {
   }).catch((e) => {
     res.status(400).send();
   });
+});
+
+// POST /users
+app.post('/users', (req, res) => {
+  var body = _.pick(req.body, ['name', 'email', 'password']); // .pick is a lodash function that takes an object and a array of properties.
+  var user = new User(body); // creates an instance of the user
+  user.save().then(() => {  // saves to the db.  then gets the created document, or an error
+    return user.generateAuthToken(); // return becase we know we're expecting a chain promise  (?? needs more understanding on my part)
+  }).then((token) => {
+    // send the token back as an http response header. header() takes two key-value pair arguments: name and value
+    // for a custom header, use "x-" as the prefix. In this case we're using a jwt token scheme, thus we create a custom header for that value
+    res.header('x-auth', token).send(user);
+  })
+  .catch((e) => {
+    res.status(400).send(e);
+  });
+});
+
+
+app.listen(port, () => {
+  console.log(`Started up at port ${port}`);
 });
 
 module.exports = {app}; //adding this export to be used in the tests suite
