@@ -42,12 +42,12 @@ var UserSchema = new mongoose.Schema({
   }]
 });
 
-// UserSchema.methods is an object, and allow us to add any methods we like
+// ** Instance method. UserSchema.methods is an object, and allow us to add any methods we like
 // This instance method has access to the individual documents, which is needed to create a user-specific web token
 // Not using the ES6 'array' function syntax, because it does not bind the 'this' keyword that stores the individual document
 // UserSchema.methods.toJSON determines what is send back when a mongoose model is converted into a json value
 UserSchema.methods.toJSON = function() {
-  var user = this;
+  var user = this; // using lowercase 'user' for instance methods, which get called with the individual document  (see 'User' bellow for model methods)
   // toObject() takes the mongoose variable 'user' and converted to a regular object where only the properties available on the document exist
   // per mongoose documentation 'Each sub-document is converted to a plain object by calling its #toObject method.'
   var userObject = user.toObject();
@@ -55,7 +55,7 @@ UserSchema.methods.toJSON = function() {
   return _.pick(userObject, ['_id', 'email']); // leaves out the password and the token array, which should not be returned to the client
 };
 
-// this will create a modified token and make it available for use in the server.js file
+// ** Instance method. This will create a modified token and make it available for use in the server.js file
 UserSchema.methods.generateAuthToken = function () {
   var user = this;
   var access = 'auth';
@@ -78,6 +78,32 @@ UserSchema.methods.generateAuthToken = function () {
   });
   // in the server.js file, we can tack another callback
 };
+
+// ** Model method (.statics)
+// Here we define the findByToken method
+UserSchema.statics.findByToken = function (token) {
+  var User = this;  // using uppercase 'User' for model methods, which get call with the model as the 'this' binding (see lowercase 'user' for instance calls)
+  var decoded;  // stores the decoded jwt values (see playground/hashing.js for example)
+  // use try catch block..
+  try {
+    decoded = jwt.verify(token, 'abc123'); // verifying the token - pass the token and secret to jwt.verify()
+  } catch (e) {
+    // if error in verifying token, findByToken returns a promise that will reject, and the rest of the function does not execute
+    // return new Promise((resolve, reject) => {
+    //   reject();
+    // });
+    return Promise.reject(); // same as above 'return new Promise...' code
+  }
+
+  // if we find the token, search for the corresponding user
+  return User.findOne({  // return so we can have chained calls (.then) in server.js
+    // querying nested object properties
+    _id: decoded._id,  // not sure how to explain this
+    'tokens.token': token, // defined in UserSchema, set it to 'token' as in findByToken = function (token)
+    'tokens.access': 'auth' // 'token.access' needs quotes because of the dot '.'  - why auth and not x-auth?
+  });
+};
+
 
 // create the User model
 var User = mongoose.model('User', UserSchema);

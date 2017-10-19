@@ -11,6 +11,7 @@ const _ = require('lodash'); // utility functions
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
+var {authenticate} = require('./middleware/authenticate');
 
 var app = express();
 const port = process.env.PORT;  // Gets the port - Refer to config
@@ -119,15 +120,21 @@ app.post('/users', (req, res) => {
   user.save().then(() => {  // saves to the db.  then gets the created document, or an error
     return user.generateAuthToken(); // return becase we know we're expecting a chain promise  (?? needs more understanding on my part)
   }).then((token) => {
-    // send the token back as an http response header. header() takes two key-value pair arguments: name and value
+    // send the token back as an http response header. res.header() takes two key-value pair arguments: name and value
     // for a custom header, use "x-" as the prefix. In this case we're using a jwt token scheme, thus we create a custom header for that value
-    res.header('x-auth', token).send(user);
+    res.header('x-auth', token).send(user); // res.header() sets the header
   })
   .catch((e) => {
     res.status(400).send(e);
   });
 });
 
+
+// Private route. requires authentication
+// calls the middleware 'authenticate'
+app.get('/users/me', authenticate, (req, res) => {
+  res.send(req.user);  //
+});
 
 app.listen(port, () => {
   console.log(`Started up at port ${port}`);
