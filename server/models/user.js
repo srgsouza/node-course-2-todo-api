@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const validator = require('validator'); // npm library that handles validation - ie email has proper format.
 const jwt = require('jsonwebtoken');  // library to deal with encryption, tokens...
-const _ = require('lodash'); // needed for the .pick() method
+const _ = require('lodash'); // needed for the .pick() method (get only certain properties of an object)
+const bcrypt = require('bcryptjs'); // used for the hashing of passwords
 
 // This UserSchema variable stores the schema (properties) for the user - using this since we can't add methods to the User model directly
 var UserSchema = new mongoose.Schema({
@@ -103,6 +104,24 @@ UserSchema.statics.findByToken = function (token) {
     'tokens.access': 'auth' // 'token.access' needs quotes because of the dot '.'  - why auth and not x-auth?
   });
 };
+
+
+// Define a mongoose middleware to hash passwords - 'pre' as in prior to saving the data
+UserSchema.pre('save', function (next) { // next is necessary as an argurment, so that it can be called. Otherwise app will crash
+  var user = this;
+  // Ensure we don't hash a password that's already hashed (example: user is changing their email only)
+  if (user.isModified('password')) { // only encrypts the password if it was just modified
+    var password = user.password;  // get the newly modified password
+    bcrypt.genSalt(10, (err, salt) => { // Generates the salt. First arg is the number of rounds
+      bcrypt.hash(password, salt, (err, hash) => {   // hashes the password
+        user.password = hash;
+        next();
+      });
+    });
+  } else {
+    next();
+  }
+});
 
 
 // create the User model

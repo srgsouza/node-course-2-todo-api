@@ -1,18 +1,36 @@
 
 const {SHA256} = require('crypto-js');  // gets the encryption property SHA256
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
-var data = {
-  id: 10
-};
+var password = '123abc';
 
-// JWT sign returns a token. takes and object and a secret.
-var token = jwt.sign(data, '123abc');
-console.log(token);
+// Generates the salt. First arg is the number of rounds
+bcrypt.genSalt(10, (err, salt) => {
+  // hashes the password
+  bcrypt.hash(password, salt, (err, hash) => {
+    console.log(hash);
+  });
+});
 
-var decoded = jwt.verify(token, '123abc');
-console.log('decoded', decoded);
+var hashedPassword = '$2a$10$BSBxdKKLCxhr2kXB3Zv2PulhQKJ5TwtSrQiZOdYcBAKE6MVjvJy6.';
 
+bcrypt.compare(password, hashedPassword, (err, res) => {
+  console.log(res);
+});
+
+
+// var data = {
+//   id: 10
+// };
+//
+// // JWT sign returns a token. takes and object and a secret.
+// var token = jwt.sign(data, '123abc');
+// console.log(token);
+//
+// var decoded = jwt.verify(token, '123abc');
+// console.log('decoded', decoded);
+//
 
 
 // Instead of writing code, like bellow, to authenticate, we use JWT!
