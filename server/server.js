@@ -129,11 +129,25 @@ app.post('/users', (req, res) => {
   });
 });
 
-
 // Private route. requires authentication
 // calls the middleware 'authenticate'
 app.get('/users/me', authenticate, (req, res) => {
   res.send(req.user);  //
+});
+
+// POST /users/login  -> allow existing users to login
+app.post('/users/login', (req, res) => {
+  var body = _.pick(req.body, ['email', 'password']); // get email and passwords from the request
+  // var user = new User(body);  // create an instance of the user.
+  User.findByCredentials(body.email, body.password).then((user) => { // Check if user exists in database
+    return user.generateAuthToken().then((token) => { // generate a new token for the user
+      res.header('x-auth', token).send(user); // res.header() sets the header
+    });
+    res.send(user);   // send user if successful
+  }).catch((e) => {  // send 400 if user not found
+    res.status(400).send();
+  });
+
 });
 
 app.listen(port, () => {

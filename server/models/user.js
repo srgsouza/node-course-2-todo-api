@@ -105,6 +105,27 @@ UserSchema.statics.findByToken = function (token) {
   });
 };
 
+// Model method
+// Define the findByCredentials method
+UserSchema.statics.findByCredentials = function (email, password) {
+  var User = this;
+  return User.findOne({email}).then((user) => {
+    if (!user) {  // if no  user is found
+      return Promise.reject();  // return rejected promise. (to be further handled in the .catch() in server.js)
+    }
+
+    return new Promise((resolve, reject) => {  // wrapping bcrypt in a promise since by default it only supports callbacks
+      bcrypt.compare(password, user.password, (err, res) => {
+        if (res) {
+          resolve(user);  // resolve the promise and return the user that was found in the database
+        } else {
+          reject();
+        }
+      });
+    });
+  });
+
+};
 
 // Define a mongoose middleware to hash passwords - 'pre' as in prior to saving the data
 UserSchema.pre('save', function (next) { // next is necessary as an argurment, so that it can be called. Otherwise app will crash
