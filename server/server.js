@@ -113,12 +113,12 @@ app.patch('/todos/:id', (req, res) => {
   });
 });
 
-// POST /users
+// POST /users -> Create a new user
 app.post('/users', (req, res) => {
   var body = _.pick(req.body, ['name', 'email', 'password']); // .pick is a lodash function that takes an object and a array of properties.
   var user = new User(body); // creates an instance of the user
   user.save().then(() => {  // saves to the db.  then gets the created document, or an error
-    return user.generateAuthToken(); // return becase we know we're expecting a chain promise  (?? needs more understanding on my part)
+    return user.generateAuthToken(); // return because we know we're expecting a chain promise  (?? needs more understanding on my part)
   }).then((token) => {
     // send the token back as an http response header. res.header() takes two key-value pair arguments: name and value
     // for a custom header, use "x-" as the prefix. In this case we're using a jwt token scheme, thus we create a custom header for that value

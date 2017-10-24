@@ -4,29 +4,16 @@
 // and if we send bad data we get a code 400
 
 const expect = require('expect'); // test assertions
-const request = require('supertest'); // test express routes
+const request = require('supertest'); // test express routes -> request(app), .get, .set, .expect, ...
 const {ObjectID} = require('mongodb'); // needed to create the ID object of the mongo DB
 
 const {app} = require('./../server'); // ES6 destructuring syntax (set app property to the app variable) - access to the express app
 const {Todo} = require('./../models/todo'); // access to the Todo model (based on mongoose)
+const {User} = require('./../models/user'); // access to the user model
+const {todos, populateTodos, users, populateUsers} = require('./../tests/seed/seed'); // access to the functions in seed.js
 
-// dummy array of objects. This is the seed data we'll use to insert to the db.
-const todos = [{
-  _id: new ObjectID(),
-  text: 'First test todo'
-}, {
-  _id: new ObjectID(),
-  text: 'Second test todo',
-  completed: true,
-  completedAt: 333
-}];
-
-beforeEach((done) => { // before each time the test is run...
-  Todo.remove({}).then(() => { // remove all items from the db
-    // done();
-    return Todo.insertMany(todos); // insert objects from the previously created todos array. return the response to allow chain callbacks
-  }).then(() => done()); // expression syntax - not sure how to explain this
-});
+beforeEach(populateUsers); // populate the database with the seed values - in seed/seed.js
+beforeEach(populateTodos); // populate the database with the seed todos
 
 describe('POST /todos', () => { // describe and group the tests. This one is for the POST routes.
   it('should create a new todo', (done) => { // 'it' is a mocha functionalilty. We use 'done', mocha property, to test async functions
@@ -198,6 +185,79 @@ describe('PATCH /todos/:id', () => {
         expect(res.body.todo.completed).toBe(false);
         // expect(res.body.todo.completedAt).toNotExist(); // TODO This is not working, possibly due to expect version
       })
+      .end(done);
+  });
+});
+
+describe('/GET /users/me', () => {
+  it('should return user if authenticated', (done) => {
+      request(app)
+        .get('/users/me')
+        .set('x-auth', users[0].tokens[0].token) // set header with token
+        .expect(200)
+        .expect((res) => {
+          expect(res.body._id).toBe(users[0]._id.toHexString());
+          expect(res.body.email).toBe(users[0].email);
+        })
+        .end(done);
+  });
+
+  it('should return 401 if not authenticated', (done) => {
+    request(app)
+      .get('/users/me')
+      .expect(401)
+      .expect((res) => {
+        expect(res.body).toEqual({});  // body object to equal empty object
+      })
+      .end(done);
+  });
+});
+
+
+describe('POST /users', () => {
+  it('should create a user', (done) => {
+    var email = 'example@example.com';
+    var password = 'abc123!';
+    request(app)
+      .post('/users')
+      .send({email, password})
+      .expect(200)
+      .expect((res) => {
+        // expect(res.headers['x-auth']).toExist(); // use bracket notation instead of 'dot', because 'x-auth' has a hyphen  TODO toExist() not working
+        // expect(res.body._id).toExist();  // TODO - NOt working. Need 'expect' upgrade?
+        expect(res.body.email).toBe(email);
+      })
+      // .end(done);
+      .end((err) => { // couuld have used '.end(done)', or extend testing functionality like this...
+        if (err) {
+          return done(err);
+        }
+        User.findOne({email}).then((user) => {
+          // expect(user).toExist(); // TODO toExist not working
+          // expect(user.password).toNotBe(password); // TODO toNotBe() not working. checking password in the db.  should be hashed and not same as password
+          done();
+        });
+      });
+  });
+
+  it('should return validation errors if request invalid', (done) => {
+    var email = 'example.example.com';
+    var password = 'abc';
+    request(app)
+      .post('/users')
+      .send({email, password})
+      .expect(400)
+      .end(done);
+
+  });
+
+  it('should not create user if email in use', (done) => {
+    var email = 'joe@example.com'; // email already in DB
+    var password = 'abc123!';
+    request(app)
+      .post('/users')
+      .send({email, password})
+      .expect(400)
       .end(done);
   });
 });

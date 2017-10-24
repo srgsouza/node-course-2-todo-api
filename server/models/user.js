@@ -8,7 +8,7 @@ const bcrypt = require('bcryptjs'); // used for the hashing of passwords
 var UserSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: false,
     minlength: 1,
     trim: true,
   },
@@ -60,7 +60,7 @@ UserSchema.methods.toJSON = function() {
 UserSchema.methods.generateAuthToken = function () {
   var user = this;
   var access = 'auth';
-  // sign takes an object and a 'secret' value.
+  // sign takes an object and a 'secret' value. (key values pair)
   // getting the user id property 'user._id' and pass the string, as opposed to passing the object, to jwt.sign.
   // Also pass the access and secret value.
   // convert it to a string and assign to the token variable
