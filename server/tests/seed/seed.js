@@ -7,7 +7,7 @@ const {User} = require('./../../models/user');
 const userOneId = new ObjectID(); // used in the users array
 const userTwoId = new ObjectID(); // same
 
-// dummy array of objects. This is the seed data we'll use to insert to the db.
+// dummy array of objects. This is the user seed data we'll use to insert to the db.
 const users = [{
   _id: userOneId,
   name: 'serg',
@@ -24,7 +24,7 @@ const users = [{
   password: 'userTwoPass'
 }];
 
-// dummy array of objects. This is the seed data we'll use to insert to the db.
+// dummy array of objects. This is the todo seed data we'll use to insert to the db.
 const todos = [{
   _id: new ObjectID(),
   text: 'First test todo'
