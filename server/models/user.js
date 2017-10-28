@@ -80,6 +80,17 @@ UserSchema.methods.generateAuthToken = function () {
   // in the server.js file, we can tack another callback
 };
 
+// ** Instance method. This will remove the user's token
+UserSchema.methods.removeToken = function (token) {
+  var user = this;
+
+  return user.update({ // use the update() method to update documents of a collection
+    $pull: {  // $pull is a mongodb operator. Allows removal of items from an array, that matches a certain criteria
+      tokens: {token}  // if 'token' is a match inside the tokens array, it will remove the item (remove the array item with access and token)
+    }
+  });
+};
+
 // ** Model method (.statics)
 // Here we define the findByToken method
 UserSchema.statics.findByToken = function (token) {

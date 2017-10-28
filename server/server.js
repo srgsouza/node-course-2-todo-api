@@ -143,12 +143,23 @@ app.post('/users/login', (req, res) => {
     return user.generateAuthToken().then((token) => { // generate a new token for the user
       res.header('x-auth', token).send(user); // res.header() sets the header
     });
-    res.send(user);   // send user if successful
+    // res.send(user);   // send user if successful
   }).catch((e) => {  // send 400 if user not found
     res.status(400).send();
   });
 
 });
+
+// DELETE /users/logout  -> Delete the token of the currently logged in user
+// the authenticate middleware has the user and the token stored (req.user and req.token)
+app.delete('/users/me/token', authenticate, (req, res) => {
+  req.user.removeToken(req.token).then(() => {
+    res.status(200).send();
+  }, () => {
+    res.status(400).send();
+  });
+});
+
 
 app.listen(port, () => {
   console.log(`Started up at port ${port}`);
