@@ -64,7 +64,7 @@ UserSchema.methods.generateAuthToken = function () {
   // getting the user id property 'user._id' and pass the string, as opposed to passing the object, to jwt.sign.
   // Also pass the access and secret value.
   // convert it to a string and assign to the token variable
-  var token = jwt.sign({_id: user._id.toHexString(), access}, 'abc123').toString();
+  var token = jwt.sign({_id: user._id.toHexString(), access}, process.env.JWT_SECRET).toString();
 
   // Update the tokens array (defined in the schema). This completes the change in the User model (locally)
   user.tokens.push({access, token});
@@ -98,7 +98,7 @@ UserSchema.statics.findByToken = function (token) {
   var decoded;  // stores the decoded jwt values (see playground/hashing.js for example)
   // use try catch block..
   try {
-    decoded = jwt.verify(token, 'abc123'); // verifying the token - pass the token and secret to jwt.verify()
+    decoded = jwt.verify(token, process.env.JWT_SECRET); // verifying the token - pass the token and secret to jwt.verify()
   } catch (e) {
     // if error in verifying token, findByToken returns a promise that will reject, and the rest of the function does not execute
     // return new Promise((resolve, reject) => {
