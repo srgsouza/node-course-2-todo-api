@@ -22,10 +22,11 @@ app.use(bodyParser.json());
 
 // the client uses the post http method to create a resource (JSON object) and send it to the server
 // the server will take the JSON's text property, create the new model (complete including ID) and send it back to the client
-app.post('/todos', (req, res) => {
+app.post('/todos', authenticate, (req, res) => {
   // console.log(req.body); // testing. body has the json object, stored by bodyParser
   var todo = new Todo({  // Creates a new instance of the Todo object, defined in the model at todo.js
-    text: req.body.text //gets the text property of the body
+    text: req.body.text, //gets the text property of the body
+    _creator: req.user._id  // gets the id of the user - 'req.user._id' is available via the authenticate middleware
   });
 
   todo.save().then((doc) => {  // saves to the db.  then gets the created document, or an error
@@ -36,8 +37,10 @@ app.post('/todos', (req, res) => {
 });
 
 // GET route for all todos
-app.get('/todos', (req, res) => {
-  Todo.find().then((todos) => {
+app.get('/todos', authenticate, (req, res) => {
+  Todo.find({
+    _creator: req.user._id   // finds todos only for the creator of the todo
+  }).then((todos) => {
     res.send({todos});  // Create an object and specify todos setting equal to the array.  Use this instead of directly passing back an array like res.send(todos), which allows for no flexibility
   }, (e) => {
         res.status(400).send(e);
@@ -45,14 +48,17 @@ app.get('/todos', (req, res) => {
 });
 
 // GET route for IDs - /todos/123456
-app.get('/todos/:id', (req, res) => { // use the format './route/:someName'  where someName is passed via the url
+app.get('/todos/:id', authenticate, (req, res) => { // use the format './route/:someName'  where someName is passed via the url
   var id = req.params.id;  // This gets the dynamic ':id' parameter from '/todos/id'
   // res.send(req.params);  // testing - gets a json response
   if (!ObjectID.isValid(id)) {  // Checks whether ID has a valid format NOT.  mongoose functionality
     return res.status(404).send(); //  send 404. 'return' stops functin execution.
   }
 
-  Todo.findById(id).then((todo) => {  // Search a todo by ID
+  Todo.findOne({
+    _id: id,
+    _creator: req.user._id
+  }).then((todo) => {  // Search a todo by ID
     if (!todo) {  // If todo not found in DB
       return res.status(404).send('Todo not found');
     }
@@ -64,13 +70,16 @@ app.get('/todos/:id', (req, res) => { // use the format './route/:someName'  whe
 });
 
 // DELETE route
-app.delete('/todos/:id', (req, res) => {
+app.delete('/todos/:id', authenticate, (req, res) => {
   var id = req.params.id;   // get the id
   if (!ObjectID.isValid(id)) { // validate the id, return 404 if not valid
     return res.status(404).send();   // return status and empty result
   }
 
-  Todo.findByIdAndRemove(id).then((todo) => {  // remove todo by ID
+  Todo.findOneAndRemove({
+    _id: id,
+    _creator: req.user._id
+  }).then((todo) => {  // remove todo by ID
     if (!todo) { // if todo not present, return 404
       return res.status(404).send();
     }
@@ -82,7 +91,7 @@ app.delete('/todos/:id', (req, res) => {
 });
 
 // PATCH  (http patch method, used to update items)
-app.patch('/todos/:id', (req, res) => {
+app.patch('/todos/:id', authenticate, (req, res) => {
   var id = req.params.id; // get the id
   // body stores the updates.
   // .pick is a lodash function that takes an object and a array of properties. (properties to be updated by the user)
@@ -100,9 +109,11 @@ app.patch('/todos/:id', (req, res) => {
     body.completedAt = null;
   }
 
-  // ref: findByIdAndUpdate() is similar to what we use on findOneAndUpdate() on the playground/mongodb-update.js
   // update the database with 'body'.  {new: true} is an option that returns the object from the db
-  Todo.findByIdAndUpdate(id, {$set: body}, {new: true}).then((todo) => {
+  Todo.findOneAndUpdate({
+    _id: id,  // id of the todo item
+    _creator: req.user._id // id of the creator
+    }, {$set: body}, {new: true}).then((todo) => {
     if (!todo) { // if todo not found
       return res.status(404).send();
     }

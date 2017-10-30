@@ -16,8 +16,12 @@ var Todo = mongoose.model('Todo', {
   completedAt: {
     type: Number,
     default: null
+  },
+  _creator: {
+    type: mongoose.Schema.Types.ObjectId,  //mongoose ObjectID type
+    required: true
   }
 });
 
 
-module.exports = {Todo}; // ES6 syntax. Exporting Todo object 
+module.exports = {Todo}; // ES6 syntax. Exporting Todo object
