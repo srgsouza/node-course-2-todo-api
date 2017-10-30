@@ -136,8 +136,8 @@ describe('DELETE /todos/:id', () => {
         }
         // Query the database using findById toNotExist
         Todo.findById(hexId).then((todo) => {
-          expect(todo).toNotExist();  // TODO This is not working, possibly due to expect version
-          // done();
+          expect(todo).toBeFalsy();  //
+          done();
         }).catch((e) => done(e));
       });
   });
@@ -155,8 +155,8 @@ describe('DELETE /todos/:id', () => {
         }
         // Query the database using findById toNotExist
         Todo.findById(hexId).then((todo) => {
-          expect(todo).toExist();  // TODO This is not working, possibly due to expect version
-          // done();
+          expect(todo).toBeTruthy();
+          done();
         }).catch((e) => done(e));
       });
   });
@@ -198,7 +198,8 @@ describe('PATCH /todos/:id', () => {
       .expect((res) => {
           expect(res.body.todo.text).toBe(text);
           expect(res.body.todo.completed).toBe(true);
-          // expect(res.body.todo.completedAt).toBeA('string'); // TODO This is not working, possibly due to expect version
+          // expect(res.body.todo.completedAt).toBeA('string');
+          expect(typeof res.body.todo.completedAt).toBe('number');
       })
       .end(done);
   });
@@ -237,7 +238,7 @@ describe('PATCH /todos/:id', () => {
       .expect((res) => {
         expect(res.body.todo.text).toBe(text);
         expect(res.body.todo.completed).toBe(false);
-        // expect(res.body.todo.completedAt).toNotExist(); // TODO This is not working, possibly due to expect version
+        expect(res.body.todo.completedAt).toBeFalsy(); //
       })
       .end(done);
   });
@@ -277,8 +278,8 @@ describe('POST /users', () => {
       .send({email, password})
       .expect(200)
       .expect((res) => {
-        // expect(res.headers['x-auth']).toExist(); // use bracket notation instead of 'dot', because 'x-auth' has a hyphen  TODO toExist() not working
-        // expect(res.body._id).toExist();  // TODO - NOt working. Need 'expect' upgrade?
+        expect(res.headers['x-auth']).toBeTruthy(); // use bracket notation instead of 'dot', because 'x-auth' has a hyphen
+        expect(res.body._id).toBeTruthy();
         expect(res.body.email).toBe(email);
       })
       // .end(done);
@@ -287,8 +288,8 @@ describe('POST /users', () => {
           return done(err);
         }
         User.findOne({email}).then((user) => {
-          // expect(user).toExist(); // TODO toExist not working
-          // expect(user.password).toNotBe(password); // TODO toNotBe() not working. checking password in the db.  should be hashed and not same as password
+          expect(user).toBeTruthy();
+          expect(user.password).not.toBe(password); // checking password in the db.  should be hashed and not same as password
           done();
         }).catch((e) => done(e));
       });
@@ -326,7 +327,7 @@ describe('POST /users/login', () => {
       })
       .expect(200)
       .expect((res) => {
-        expect(res.headers['x-auth']).toExist();  // TODO toExist() not working
+        expect(res.headers['x-auth']).toBeTruthy();
       })
       .end((err, res) => {
         if (err) {
@@ -334,7 +335,7 @@ describe('POST /users/login', () => {
         }
 
         User.findById(users[1]._id).then((user) => {  // search for user by ID
-          expect(user.tokens[1]).toInclude({  // user token should include access and token TODO toInclude not working
+          expect(user.toObject().tokens[1]).toMatchObject({  // toObject() returns the raw user data.  user token should include access and token
             access: 'auth',
             token: res.headers['x-auth']
           });
@@ -352,7 +353,7 @@ describe('POST /users/login', () => {
       })
       .expect(400)
       .expect((res) => {
-        expect(res.headers['x-auth']).toNotExist();  // TODO toNotExist() not working
+        expect(res.headers['x-auth']).toBeFalsy();
       })
       .end((err, res) => {
         if (err) {
